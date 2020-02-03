@@ -38,7 +38,7 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
             # to split "/home". So the lack of a slash is what we do to tell us that "it's time to stop"
             break
         end
-        for _venv_dir in (find "$_tree" -maxdepth 1 -type d)
+        for _venv_dir in (find "$_tree" -maxdepth 1 -type d 2> /dev/null)
             if test -e "$_venv_dir/bin/activate.fish"
                 set _source "$_venv_dir/bin/activate.fish"
                 if test "$autovenv_announce" = "yes"
