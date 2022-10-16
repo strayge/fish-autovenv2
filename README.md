@@ -1,13 +1,16 @@
 #### AutoVenv
-[Oh My Fish][omf] plugin to automatically activate/deactivate Python virtual enviroments upon entering/leaving a directory.
+
+Plugin to automatically activate/deactivate Python virtual enviroments upon entering/leaving a directory.
+
+Forked to provide compatibility with [fisher](https://github.com/jorgebucaran/fisher) plugin manager.
 
 [![MIT License][license-badge]](/LICENSE)
 </br>
 
 ## Install
-Installation with [Oh My Fish][omf]:
+Installation with [fisher](https://github.com/jorgebucaran/fisher):
 
-    omf install autovenv
+    fisher install strayge/fish-autovenv2
 
 ## About
 Do you like the way Pyenv automatically switches between enviroments when you change directories and wish
@@ -32,4 +35,3 @@ Controls whether or not a message is printed when entering/leaving/changing venv
 [author]: https://github.com/timothybrown
 [license-badge]: https://img.shields.io/badge/license-MIT-007EC7.svg?style=flat-square
 [mit]: http://opensource.org/licenses/MIT
-[omf]: https://github.com/oh-my-fish/oh-my-fish
