@@ -38,9 +38,10 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
             # to split "/home". So the lack of a slash is what we do to tell us that "it's time to stop"
             break
         end
-        for _venv_dir in (find "$_tree" -maxdepth 1 -type d 2> /dev/null)
-            if test -e "$_venv_dir/bin/activate.fish"
-                set _source "$_venv_dir/bin/activate.fish"
+        for _venv_dir in (/usr/bin/find "$_tree" -maxdepth 1 -type d 2> /dev/null)
+            if test -e "$_venv_dir/Scripts/activate"
+                # set _source "$_venv_dir/bin/activate.fish"
+                set _source "$_venv_dir/Scripts/activate"
                 if test "$autovenv_announce" = "yes"
                     set -g __autovenv_old $__autovenv_new
                     set -g __autovenv_new (basename $_tree)
@@ -57,7 +58,77 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
     end
     # If we're *not* in an active venv and the venv source dir exists we activate it and return.
     if test -z "$VIRTUAL_ENV" -a -e "$_source"
-        source "$_source"
+        # source "$_source"
+        
+        # manual activation (as on windows activate.fish is not exists)
+        
+        ##### start of activate.fish content
+        function deactivate  -d "Exit virtual environment and return to normal shell environment"
+            # reset old environment variables
+            if test -n "$_OLD_VIRTUAL_PATH"
+                set -gx PATH $_OLD_VIRTUAL_PATH
+                set -e _OLD_VIRTUAL_PATH
+            end
+            if test -n "$_OLD_VIRTUAL_PYTHONHOME"
+                set -gx PYTHONHOME $_OLD_VIRTUAL_PYTHONHOME
+                set -e _OLD_VIRTUAL_PYTHONHOME
+            end
+
+            if test -n "$_OLD_FISH_PROMPT_OVERRIDE"
+                functions -e fish_prompt
+                set -e _OLD_FISH_PROMPT_OVERRIDE
+                functions -c _old_fish_prompt fish_prompt
+                functions -e _old_fish_prompt
+            end
+
+            set -e VIRTUAL_ENV
+            set -e VIRTUAL_ENV_PROMPT
+            if test "$argv[1]" != "nondestructive"
+                # Self-destruct!
+                functions -e deactivate
+            end
+        end
+
+        # Unset irrelevant variables.
+        deactivate nondestructive
+
+        set -gx VIRTUAL_ENV "$venv_dir"
+
+        set -gx _OLD_VIRTUAL_PATH $PATH
+        # TODO: switch between bin & Scripts
+        set -gx PATH "$VIRTUAL_ENV/Scripts" $PATH
+
+        # Unset PYTHONHOME if set.
+        if set -q PYTHONHOME
+            set -gx _OLD_VIRTUAL_PYTHONHOME $PYTHONHOME
+            set -e PYTHONHOME
+        end
+
+         if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
+            # fish uses a function instead of an env var to generate the prompt.
+
+            # Save the current fish_prompt function as the function _old_fish_prompt.
+            functions -c fish_prompt _old_fish_prompt
+
+            # With the original prompt function renamed, we can override with our own.
+            function fish_prompt
+                # Save the return status of the last command.
+                set -l old_status $status
+
+                # Output the venv prompt; color taken from the blue of the Python logo.
+                printf "%s%s%s" (set_color 4B8BBE) "(venv) " (set_color normal)
+
+                # Restore the return status of the previous command.
+                echo "exit $old_status" | .
+                # Output the original/"old" prompt.
+                _old_fish_prompt
+            end
+
+            set -gx _OLD_FISH_PROMPT_OVERRIDE "$VIRTUAL_ENV"
+            set -gx VIRTUAL_ENV_PROMPT "(venv) "
+        end
+        ##### end of activate.fish content
+
         if test "$autovenv_announce" = "yes"
             echo "Activated Virtual Environment ($__autovenv_new)"
         end
