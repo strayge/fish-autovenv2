@@ -2,9 +2,11 @@
 
 Plugin to automatically activate/deactivate Python virtual enviroments upon entering/leaving a directory.
 
-Forked to provide compatibility with [fisher](https://github.com/jorgebucaran/fisher) plugin manager.
+Fork changes:
 
-Compatible with MSYS2.
+- Compatibility with [fisher](https://github.com/jorgebucaran/fisher) plugin manager.
+- Compatibility with MSYS2.
+- Limit directories names to lookup for venv (can be set via `autovenv_dirs` var).
 
 [![MIT License][license-badge]](/LICENSE)
 </br>

@@ -7,6 +7,8 @@ if status is-interactive
         and set -g autovenv_announce "yes"
     test -z "$autovenv_enable"
         and set -g autovenv_enable "yes"
+    test -z "$autovenv_dirs"
+        and set -g autovenv_dirs "venv .venv env .env"
 end
 
 # Default activate.fish script with minor modifications
@@ -100,9 +102,9 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
     test ! "$autovenv_enable" = "yes"
         or not status is-interactive
         and return
-    # Start at PWD (prsent working directory, see if there is a subfolder that contains bin/activate.fish
-    # ie. start at $PWD/<any subdir>/bin/activate.fish
-    # If that doesn't exist, try $PWD/../<any subdir>/bin/activate.fish
+    # Start at PWD (prsent working directory, see if there is a subfolder that contains bin/activate
+    # ie. start at $PWD/<subdir from autovenv_dirs>/bin/activate
+    # If that doesn't exist, try $PWD/../<subdir from autovenv_dirs>/bin/activate
     # Keep going until we cannot go any further
     set -l _tree "$PWD/."
     set -l _done false
@@ -115,6 +117,19 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
             break
         end
         for _venv_dir in (/usr/bin/find "$_tree" -maxdepth 1 -type d 2> /dev/null)
+            # skip directories that are not in the autovenv_dirs list
+            set -l _skip true
+            set -l _venv_dir_basename (basename $_venv_dir)
+            for _dir in (string split ' ' $autovenv_dirs)
+                if string match -q -- "$_dir" "$_venv_dir_basename"
+                    set _skip false
+                    break
+                end
+            end
+            if $_skip
+                continue
+            end
+
             if test -e "$_venv_dir/bin/activate" -o -e "$_venv_dir/Scripts/activate"
                 set _source "$_venv_dir"
                 if test "$autovenv_announce" = "yes"
