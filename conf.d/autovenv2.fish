@@ -9,6 +9,8 @@ if status is-interactive
         and set -g autovenv_enable "yes"
     test -z "$autovenv_dirs"
         and set -g autovenv_dirs "venv .venv env .env"
+    test -z "$autovenv_file"
+        and set -g autovenv_file ".venv"
 end
 
 # Default activate.fish script with minor modifications
@@ -116,31 +118,42 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
             # to split "/home". So the lack of a slash is what we do to tell us that "it's time to stop"
             break
         end
+
+        set -l _possible_dirs
+
+        # check autovenv_file presence
+        if test -f "$_tree/$autovenv_file"
+            set -l _venv_dir_from_file (cat "$_tree/$autovenv_file" | string trim)
+            if test -n "$_venv_dir_from_file" -a -d "$_venv_dir_from_file"
+                # add directory from autovenv_file to possible directories
+                set -a _possible_dirs "$_venv_dir_from_file"
+            end
+        end
+
+        # check directory from autovenv_dirs presence
         for _venv_dir in (/usr/bin/find "$_tree" -maxdepth 1 -type d 2> /dev/null)
-            # skip directories that are not in the autovenv_dirs list
-            set -l _skip true
             set -l _venv_dir_basename (basename $_venv_dir)
             for _dir in (string split ' ' $autovenv_dirs)
                 if string match -q -- "$_dir" "$_venv_dir_basename"
-                    set _skip false
-                    break
+                    set -a _possible_dirs "$_venv_dir"
                 end
             end
-            if $_skip
-                continue
-            end
+        end
 
-            if test -e "$_venv_dir/bin/activate" -o -e "$_venv_dir/Scripts/activate"
-                set _source "$_venv_dir"
+        for _dir in $_possible_dirs
+            # found a match, check for the presence of the activate script
+            if test -e "$_dir/bin/activate" -o -e "$_dir/Scripts/activate"
+                set _source "$_dir"
                 if test "$autovenv_announce" = "yes"
                     set -g __autovenv_old $__autovenv_new
-                    set -g __autovenv_new (basename $_tree)
-                    set venv_dir $_venv_dir
+                    set -g __autovenv_new (basename $_dir)
+                    set venv_dir $_dir
                 end
                 set _done true
                 break
             end
         end
+
         if $_done
             break
         end

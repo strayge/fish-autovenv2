@@ -7,6 +7,7 @@ Fork changes:
 - Compatibility with [fisher](https://github.com/jorgebucaran/fisher) plugin manager.
 - Compatibility with MSYS2.
 - Limit directories names to lookup for venv (can be set via `autovenv_dirs` var).
+- Support external virtual envs (with path to env specified in `.venv` file).
 
 [![MIT License][license-badge]](/LICENSE)
 </br>
