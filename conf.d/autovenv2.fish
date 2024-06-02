@@ -11,6 +11,8 @@ if status is-interactive
         and set -g autovenv_dirs "venv .venv env .env"
     test -z "$autovenv_file"
         and set -g autovenv_file ".venv"
+    test -z "$autovenv_envs"
+        and set -g autovenv_envs "$HOME/.virtualenvs"
 end
 
 # Default activate.fish script with minor modifications
@@ -188,3 +190,60 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
     end
 end
 ################################################################################
+
+## Extra functions for external venv management
+
+function venvls -d "List external virtual environments"
+    for _venv in (/usr/bin/find "$autovenv_envs" -maxdepth 1 -type d 2> /dev/null)[2..-1]
+        echo (basename $_venv)
+    end
+end
+
+function venvmk -d "Create a new external virtual environment"
+    set -l _name
+    if test -z "$argv"
+        set _name (basename "$PWD")
+    else
+        set _name "$argv[1]"
+    end
+    set -l _venv_dir "$autovenv_envs/$_name"
+    if test -d "$_venv_dir"
+        echo "Virtual environment already exists."
+        return
+    end
+
+    if test -d "$autovenv_file"
+        echo "Cannot create $autovenv_file file in current directory."
+        return
+    end
+
+    python3 -m venv "$_venv_dir"
+    echo "$_venv_dir" > "$autovenv_file"
+    echo "Virtual environment created."
+end
+
+function venvrm -d "Remove an external virtual environment"
+    set -l _name
+    if test -z "$argv"
+        set _name (basename "$PWD")
+    else
+        set _name "$argv[1]"
+    end
+
+    set -l _venv_dir (path normalize "$autovenv_envs/$_name")
+    # Normalized path must be inside the autovenv_envs directory
+    # to prevent accidental deletion of random things
+    set -l _match (string match -- "$autovenv_envs/*" "$_venv_dir")
+    if test ! "$_match"
+        echo "Invalid virtual environment."
+        return
+    end
+
+    if ! test -d "$_venv_dir"
+        echo "Virtual environment does not exist."
+        return
+    end
+
+    rm -rf "$_venv_dir"
+    echo "Virtual environment removed."
+end

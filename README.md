@@ -8,6 +8,7 @@ Fork changes:
 - Compatibility with MSYS2.
 - Limit directories names to lookup for venv (can be set via `autovenv_dirs` var).
 - Support external virtual envs (with path to env specified in `.venv` file).
+- New commands for manage external virtual envs: `venvls`, `venvmk`, `venvrm`.
 
 [![MIT License][license-badge]](/LICENSE)
 </br>
