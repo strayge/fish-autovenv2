@@ -200,12 +200,32 @@ function venvls -d "List external virtual environments"
 end
 
 function venvmk -d "Create a new external virtual environment"
+    argparse 'p/python=' -- $argv
+    if test $status -ne 0
+        return
+    end
+
+    if test -z "$_flag_python"
+        set -l _default_pythons "python3" "py"
+        for _python in $_default_pythons
+            if type -q "$_python"
+                set _flag_python $_python
+                break
+            end
+        end
+        if test -z "$_flag_python"
+            echo "Python not found."
+            return
+        end
+    end
+
     set -l _name
     if test -z "$argv"
         set _name (path basename -- "$PWD")
     else
         set _name "$argv[1]"
     end
+
     set -l _venv_dir "$autovenv_envs/$_name"
     if test -d "$_venv_dir"
         echo "Virtual environment already exists."
@@ -217,7 +237,12 @@ function venvmk -d "Create a new external virtual environment"
         return
     end
 
-    python3 -m venv "$_venv_dir"
+    $_flag_python -m venv "$_venv_dir"
+    if test $status -ne 0
+        echo "Failed to create virtual environment."
+        return
+    end
+
     echo "$_venv_dir" > "$autovenv_file"
     echo "Virtual environment created."
 end
