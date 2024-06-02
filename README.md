@@ -4,6 +4,8 @@ Plugin to automatically activate/deactivate Python virtual enviroments upon ente
 
 Forked to provide compatibility with [fisher](https://github.com/jorgebucaran/fisher) plugin manager.
 
+Compatible with MSYS2.
+
 [![MIT License][license-badge]](/LICENSE)
 </br>
 
