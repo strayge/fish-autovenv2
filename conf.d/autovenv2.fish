@@ -113,11 +113,10 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
     set -l _tree "$PWD/."
     set -l _done false
     while true
-        set _tree (string split -r -m 1 -n '/' "$_tree" | select 1)
-        if ! string match -q -- "/*" $_tree
-            # This is a hack to stop when we have ascended all the way up to the top of the tree.
-            # The string split command above eventually returns something like "home" when it tries
-            # to split "/home". So the lack of a slash is what we do to tell us that "it's time to stop"
+        set -l _tree_old "$_tree"
+        set _tree (path dirname -- "$_tree")
+        if test -z "$_tree" -o "$_tree" = "$_tree_old"
+            # dirname of / is /, so we've reached the end
             break
         end
 
@@ -133,8 +132,8 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
         end
 
         # check directory from autovenv_dirs presence
-        for _venv_dir in (/usr/bin/find "$_tree" -maxdepth 1 -type d 2> /dev/null)
-            set -l _venv_dir_basename (basename $_venv_dir)
+        for _venv_dir in (path filter -d -- "$_tree"/*)
+            set -l _venv_dir_basename (path basename -- "$_venv_dir")
             for _dir in (string split ' ' $autovenv_dirs)
                 if string match -q -- "$_dir" "$_venv_dir_basename"
                     set -a _possible_dirs "$_venv_dir"
@@ -148,7 +147,7 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
                 set _source "$_dir"
                 if test "$autovenv_announce" = "yes"
                     set -g __autovenv_old $__autovenv_new
-                    set -g __autovenv_new (basename $_dir)
+                    set -g __autovenv_new (path basename -- "$_dir")
                     set venv_dir $_dir
                 end
                 set _done true
@@ -194,15 +193,16 @@ end
 ## Extra functions for external venv management
 
 function venvls -d "List external virtual environments"
-    for _venv in (/usr/bin/find "$autovenv_envs" -maxdepth 1 -type d 2> /dev/null)[2..-1]
-        echo (basename $_venv)
+    set -l _dirs (path filter -d -- "$autovenv_envs"/*)
+    for _venv in $_dirs
+        echo (path basename -- "$_venv")
     end
 end
 
 function venvmk -d "Create a new external virtual environment"
     set -l _name
     if test -z "$argv"
-        set _name (basename "$PWD")
+        set _name (path basename -- "$PWD")
     else
         set _name "$argv[1]"
     end
@@ -225,7 +225,7 @@ end
 function venvrm -d "Remove an external virtual environment"
     set -l _name
     if test -z "$argv"
-        set _name (basename "$PWD")
+        set _name (path basename -- "$PWD")
     else
         set _name "$argv[1]"
     end
