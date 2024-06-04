@@ -8,7 +8,7 @@ if status is-interactive
     test -z "$autovenv_enable"
         and set -g autovenv_enable "yes"
     test -z "$autovenv_dirs"
-        and set -g autovenv_dirs "venv .venv env .env"
+        and set -g autovenv_dirs "venv" ".venv" "env" ".env"
     test -z "$autovenv_file"
         and set -g autovenv_file ".venv"
     test -z "$autovenv_envs"
@@ -134,7 +134,7 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
         # check directory from autovenv_dirs presence
         for _venv_dir in (path filter -d -- "$_tree"/*)
             set -l _venv_dir_basename (path basename -- "$_venv_dir")
-            for _dir in (string split ' ' $autovenv_dirs)
+            for _dir in $autovenv_dirs
                 if string match -q -- "$_dir" "$_venv_dir_basename"
                     set -a _possible_dirs "$_venv_dir"
                 end
