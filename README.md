@@ -8,7 +8,13 @@ Fork changes:
 - Compatibility with MSYS2.
 - Limit directories names to lookup for venv (can be set via `autovenv_dirs` var).
 - Support external virtual envs (with path to env specified in `.venv` file).
-- New commands for manage external virtual envs: `venvls`, `venvmk`, `venvrm`.
+- New commands for manage external virtual envs (default `NAME` is current directory name):
+  - `venvls` - list all external environments
+  - `venvmk [-m] [-p PYTHON] [NAME]` - create new external environment
+    - `-m/--manual` - do not write `.venv` for auto activation
+    - `-p/--python` - specify python interpreter
+  - `venvrm [NAME]` - remove external environment
+  - `venva [NAME]` - activate external environment
 
 [![MIT License][license-badge]](/LICENSE)
 </br>

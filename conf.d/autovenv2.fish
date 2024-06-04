@@ -199,8 +199,33 @@ function venvls -d "List external virtual environments"
     end
 end
 
+function venva -d "Activate an external virtual environment"
+    set -l _name
+    if test -z "$argv"
+        set _name (path basename -- "$PWD")
+    else
+        set _name "$argv[1]"
+    end
+
+    set -l _venv_dir (path normalize "$autovenv_envs/$_name")
+    # Normalized path must be inside the autovenv_envs directory
+    set -l _match (string match -- "$autovenv_envs/*" "$_venv_dir")
+    if test ! "$_match"
+        echo "Invalid virtual environment."
+        return
+    end
+
+    if ! test -d "$_venv_dir"
+        echo "Virtual environment does not exist."
+        return
+    end
+
+    activate "$_venv_dir"
+    echo "Virtual environment activated."
+end
+
 function venvmk -d "Create a new external virtual environment"
-    argparse 'p/python=' -- $argv
+    argparse 'p/python=' 'm/manual' -- $argv
     if test $status -ne 0
         return
     end
@@ -232,7 +257,7 @@ function venvmk -d "Create a new external virtual environment"
         return
     end
 
-    if test -d "$autovenv_file"
+    if test -z "$_flag_manual" -a -d "$autovenv_file"
         echo "Cannot create $autovenv_file file in current directory."
         return
     end
@@ -243,7 +268,9 @@ function venvmk -d "Create a new external virtual environment"
         return
     end
 
-    echo "$_venv_dir" > "$autovenv_file"
+    if test -z "$_flag_manual"
+        echo "$_venv_dir" > "$autovenv_file"
+    end
     echo "Virtual environment created."
 end
 
