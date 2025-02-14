@@ -111,11 +111,11 @@ function __is_valid_venv_directory --description "Check if the directory is a va
 end
 
 function __check_venv_directory --description "Check if the directory has a virtual environment"
-    set -l directory $argv[1]
+    set -f directory $argv[1]
 
     # is autovenv_file presence
     if test -f "$directory/$autovenv_file"
-        set -l venv_dir (cat "$_tree/$autovenv_file" | string trim)
+        set -f venv_dir (cat "$directory/$autovenv_file" | string trim)
         # is directory from file valid
         if test -n "$venv_dir" -a -d "$venv_dir"
             if __is_subdirectory "$autovenv_envs" "$venv_dir"
@@ -129,7 +129,7 @@ function __check_venv_directory --description "Check if the directory has a virt
 
     # is directory from autovenv_dirs presence
     for subdirectory in $autovenv_dirs
-        set -l venv_dir "$directory/$subdirectory"
+        set -f venv_dir "$directory/$subdirectory"
         # skip if subdirectory is not present
         if not test -d "$venv_dir"
             continue
@@ -146,16 +146,16 @@ end
 
 # Function to find venv specific directory
 function __detect_venv_directory --description "Detects the virtual environment directory"
-    set -l initial_dir $argv[1]
-    set -l dir "$initial_dir/."
+    set -f initial_dir $argv[1]
+    set -f dir "$initial_dir/."
 
     while true
-        set -l prev_dir "$dir"
-        set -l dir (path dirname -- "$dir")
+        set -f prev_dir "$dir"
+        set -f dir (path dirname -- "$dir")
         if test -z "$dir" -o "$dir" = "$prev_dir"
             break
         end
-        set -l venv_dir (__check_venv_directory "$dir")
+        set -f venv_dir (__check_venv_directory "$dir")
         if test -n "$venv_dir"
             echo "$venv_dir"
             return
@@ -234,8 +234,8 @@ function venva -d "Activate an external virtual environment"
         return
     end
 
-    set -l name "$argv[1]"
-    set -l directory (path dirname -- "$PWD")
+    set -f name "$argv[1]"
+    set -f directory (path dirname -- "$PWD")
 
     set -f venv_dir
 
