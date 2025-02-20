@@ -13,6 +13,8 @@ if status is-interactive
         and set -g autovenv_file ".venv"
     test -z "$autovenv_envs"
         and set -g autovenv_envs "$HOME/.virtualenvs"
+    test -z "$autovenv_uv"
+        and set -g autovenv_uv "yes"
 end
 
 # Default activate.fish script with minor modifications
@@ -37,6 +39,10 @@ function activate -d "Activate a Python virtual environment"
                 functions -c _old_fish_prompt fish_prompt
                 functions -e _old_fish_prompt
             end
+        end
+
+        if test "$autovenv_uv" = "yes" -a -n "$UV_PROJECT_ENVIRONMENT"
+            set -e UV_PROJECT_ENVIRONMENT
         end
 
         set -e VIRTUAL_ENV
@@ -88,6 +94,11 @@ function activate -d "Activate a Python virtual environment"
 
         set -gx _OLD_FISH_PROMPT_OVERRIDE "$VIRTUAL_ENV"
         set -gx VIRTUAL_ENV_PROMPT "(venv) "
+    end
+
+    # Explicitly set uv project to workaround https://github.com/astral-sh/uv/issues/7778
+    if test "$autovenv_uv" = "yes"
+        set -gx UV_PROJECT_ENVIRONMENT "$VIRTUAL_ENV"
     end
 end
 
