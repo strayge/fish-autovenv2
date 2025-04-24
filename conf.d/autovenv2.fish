@@ -19,34 +19,11 @@ end
 
 # Default activate.fish script with minor modifications
 # required, as default Windows venv does not have an activate.fish script
-function activate -d "Activate a Python virtual environment"
-    function deactivate -d "Exit virtual environment and return to normal shell environment"
-        # reset old environment variables
-        if test -n "$_OLD_VIRTUAL_PATH"
-            set -gx PATH $_OLD_VIRTUAL_PATH
-            set -e _OLD_VIRTUAL_PATH
-        end
-        if test -n "$_OLD_VIRTUAL_PYTHONHOME"
-            set -gx PYTHONHOME $_OLD_VIRTUAL_PYTHONHOME
-            set -e _OLD_VIRTUAL_PYTHONHOME
-        end
+function venv_activate -d "Activate a Python virtual environment"
 
-        if test -n "$_OLD_FISH_PROMPT_OVERRIDE"
-            set -e _OLD_FISH_PROMPT_OVERRIDE
-            # prevents error when using nested fish instances (Issue #93858)
-            if functions -q _old_fish_prompt
-                functions -e fish_prompt
-                functions -c _old_fish_prompt fish_prompt
-                functions -e _old_fish_prompt
-            end
-        end
-
-        if test "$autovenv_uv" = "yes" -a -n "$UV_PROJECT_ENVIRONMENT"
-            set -e UV_PROJECT_ENVIRONMENT
-        end
-
-        set -e VIRTUAL_ENV
-        set -e VIRTUAL_ENV_PROMPT
+    # Make temporary alias with convenient name
+    function deactivate -d "Destructive alias for venv_deactivate"
+        venv_deactivate
         if test "$argv[1]" != "nondestructive"
             # Self-destruct!
             functions -e deactivate
@@ -100,6 +77,38 @@ function activate -d "Activate a Python virtual environment"
     if test "$autovenv_uv" = "yes"
         set -gx UV_PROJECT_ENVIRONMENT "$VIRTUAL_ENV"
     end
+end
+
+# Extracted from activate function for cases when environment activation was not from
+# activate function, so deactivate function is not available (I see at you VSCode).
+# Changed to be always non-destructive.
+function venv_deactivate -d "Exit virtual environment and return to normal shell environment"
+    # reset old environment variables
+    if test -n "$_OLD_VIRTUAL_PATH"
+        set -gx PATH $_OLD_VIRTUAL_PATH
+        set -e _OLD_VIRTUAL_PATH
+    end
+    if test -n "$_OLD_VIRTUAL_PYTHONHOME"
+        set -gx PYTHONHOME $_OLD_VIRTUAL_PYTHONHOME
+        set -e _OLD_VIRTUAL_PYTHONHOME
+    end
+
+    if test -n "$_OLD_FISH_PROMPT_OVERRIDE"
+        set -e _OLD_FISH_PROMPT_OVERRIDE
+        # prevents error when using nested fish instances (Issue #93858)
+        if functions -q _old_fish_prompt
+            functions -e fish_prompt
+            functions -c _old_fish_prompt fish_prompt
+            functions -e _old_fish_prompt
+        end
+    end
+
+    if test "$autovenv_uv" = "yes" -a -n "$UV_PROJECT_ENVIRONMENT"
+        set -e UV_PROJECT_ENVIRONMENT
+    end
+
+    set -e VIRTUAL_ENV
+    set -e VIRTUAL_ENV_PROMPT
 end
 
 # Gets particular elements from an array
@@ -195,7 +204,7 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
 
     # If we're *not* in an active venv and the venv source dir exists we activate it and return.
     if test -z "$VIRTUAL_ENV" -a -e "$_source"
-        activate "$_source"
+        venv_activate "$_source"
         if test "$autovenv_announce" = "yes"
             echo "Activated Virtual Environment ($__autovenv_new)"
         end
@@ -205,7 +214,12 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
         set -l _dir (string match -n "$VIRTUAL_ENV*" "$venv_dir")
         # If we're no longer inside the venv dirctory deactivate it and return.
         if test -z "$_dir" -a ! -e "$_source"
-            deactivate
+            # Use deactivate function if its exists with fallback to own static deactivate function
+            if functions -q deactivate
+                deactivate
+            else
+                venv_deactivate
+            end
             if test "$autovenv_announce" = "yes"
                 echo "Deactivated Virtual Enviroment ($__autovenv_new)"
                 set -e __autovenv_new
@@ -213,8 +227,13 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
             end
         # If we've switched into a different venv directory, deactivate the old and activate the new.
         else if test -z "$_dir" -a -e "$_source"
-            deactivate
-            activate "$_source"
+            # Use deactivate function if its exists with fallback to own static deactivate function
+            if functions -q deactivate
+                deactivate
+            else
+                venv_deactivate
+            end
+            venv_activate "$_source"
             if test "$autovenv_announce" = "yes"
                 echo "Switched Virtual Environments ($__autovenv_old => $__autovenv_new)"
             end
@@ -275,7 +294,7 @@ function venva -d "Activate an external virtual environment"
         return
     end
 
-    activate "$venv_dir"
+    venv_activate "$venv_dir"
     echo "Virtual environment activated."
 end
 
