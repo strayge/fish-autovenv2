@@ -131,11 +131,11 @@ function __is_valid_venv_directory --description "Check if the directory is a va
 end
 
 function __check_venv_directory --description "Check if the directory has a virtual environment"
-    set -f directory $argv[1]
+    set -l directory $argv[1]
 
     # is autovenv_file presence
     if test -f "$directory/$autovenv_file"
-        set -f venv_dir (cat "$directory/$autovenv_file" | string trim)
+        set -l venv_dir (cat "$directory/$autovenv_file" | string trim)
         # is directory from file valid
         if test -n "$venv_dir" -a -d "$venv_dir"
             if __is_subdirectory "$autovenv_envs" "$venv_dir"
@@ -149,7 +149,7 @@ function __check_venv_directory --description "Check if the directory has a virt
 
     # is directory from autovenv_dirs presence
     for subdirectory in $autovenv_dirs
-        set -f venv_dir "$directory/$subdirectory"
+        set -l venv_dir "$directory/$subdirectory"
         # skip if subdirectory is not present
         if not test -d "$venv_dir"
             continue
@@ -166,18 +166,20 @@ end
 
 # Function to find venv specific directory
 function __detect_venv_directory --description "Detects the virtual environment directory"
-    set -f initial_dir $argv[1]
-    set -f dir "$initial_dir/."
+    set -l _initial_dir $argv[1]
+    set -l _current_dir "$_initial_dir/."
 
     while true
-        set -f prev_dir "$dir"
-        set -f dir (path dirname -- "$dir")
-        if test -z "$dir" -o "$dir" = "$prev_dir"
-            break
+        set -l _prev_dir "$_current_dir"
+        set _current_dir (dirname -- "$_prev_dir")
+
+        if test -z "$_current_dir" -o "$_current_dir" = "$_prev_dir"
+            return
         end
-        set -f venv_dir (__check_venv_directory "$dir")
-        if test -n "$venv_dir"
-            echo "$venv_dir"
+
+        set -l _venv_dir (__check_venv_directory "$_current_dir")
+        if test -n "$_venv_dir"
+            echo "$_venv_dir"
             return
         end
     end
@@ -197,7 +199,7 @@ function autovenv --on-variable PWD -d "Automatic activation of Python virtual e
         set _source "$found_dir"
         if test "$autovenv_announce" = "yes"
             set -g __autovenv_old $__autovenv_new
-            set -g __autovenv_new (path basename -- "$found_dir")
+            set -g __autovenv_new (basename -- "$found_dir")
             set -l venv_dir "$found_dir"
         end
     end
@@ -250,9 +252,9 @@ function venvls -d "List external virtual environments"
         echo "List external virtual environments."
         return
     end
-    set -l _dirs (path filter -d -- "$autovenv_envs"/*)
+    set -l _dirs (find "$autovenv_envs" -mindepth 1 -maxdepth 1 -type d)
     for _venv in $_dirs
-        echo (path basename -- "$_venv")
+        echo (basename -- "$_venv")
     end
 end
 
@@ -264,28 +266,28 @@ function venva -d "Activate an external virtual environment"
         return
     end
 
-    set -f name "$argv[1]"
-    set -f directory (path dirname -- "$PWD")
+    set -l name "$argv[1]"
+    set -l directory (dirname -- "$PWD")
 
-    set -f venv_dir
+    set -l venv_dir
 
     if test -n "$name"
-        set -l test_dir (path normalize "$autovenv_envs/$name")
+        set -l test_dir (realpath -m "$autovenv_envs/$name")
         if ! __is_valid_venv_directory "$test_dir"
             echo "Virtual environment does not exist."
             return
         end
-        set -f venv_dir "$test_dir"
+        set -l venv_dir "$test_dir"
     end
 
     if test -z "$venv_dir"
-        set -f venv_dir (__detect_venv_directory "$PWD")
+        set -l venv_dir (__detect_venv_directory "$PWD")
     end
 
     if test -z "$venv_dir"
-        set -l test_dir (path normalize "$autovenv_envs/$directory")
+        set -l test_dir (realpath -m "$autovenv_envs/$directory")
         if __is_valid_venv_directory "$test_dir"
-            set -f venv_dir "$test_dir"
+            set -l venv_dir "$test_dir"
         end
     end
 
@@ -328,7 +330,7 @@ function venvmk -d "Create a new external virtual environment"
 
     set -l _name
     if test -z "$argv"
-        set _name (path basename -- "$PWD")
+        set _name (basename -- "$PWD")
     else
         set _name "$argv[1]"
     end
@@ -365,12 +367,12 @@ function venvrm -d "Remove an external virtual environment"
     end
     set -l _name
     if test -z "$argv"
-        set _name (path basename -- "$PWD")
+        set _name (basename -- "$PWD")
     else
         set _name "$argv[1]"
     end
 
-    set -l _venv_dir (path normalize "$autovenv_envs/$_name")
+    set -l _venv_dir (realpath -m "$autovenv_envs/$_name")
     # Normalized path must be inside the autovenv_envs directory
     # to prevent accidental deletion of random things
     set -l _match (string match -- "$autovenv_envs/*" "$_venv_dir")
